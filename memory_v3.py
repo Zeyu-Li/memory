@@ -66,6 +66,12 @@ class Game:
         self.state = [0] * pow(self.board_size, 2)
         self.click_x = 0
         self.click_y = 0
+        self.previous_click = 0
+        self.previous_click_coord = []
+
+        self.tile_selected_flag = False
+        self.current_index = 0
+        self.time_pause = False
 
     def create_board(self):
         # create the board shown
@@ -80,7 +86,7 @@ class Game:
         for i in range(self.board_size*2):
             # TODO: remove for unix systems
             # append image to tile set
-            self.tiles.append(pygame.image.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'image'+ str(1 + i) + '.bmp')))
+            self.tiles.append((i + 1, pygame.image.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'image'+ str(1 + i) + '.bmp'))))
 
         # since the tiles comes in pairs, 
         # add two of the same image, then shuffle
@@ -95,11 +101,16 @@ class Game:
         while not self.close_clicked:  # until player clicks close box
             # play frame
             self.handle_events()
-            self.draw()            
+            self.draw()
+            if self.time_pause:
+                pygame.time.wait(1000)
+                self.state[self.previous_click] = 0
+                self.state[self.current_index] = 0
+                self.time_pause = False
             if self.continue_game:
                 self.update()
                 self.decide_continue()
-            self.game_Clock.tick(self.FPS) # run at most with FPS Frames Per Second 
+            self.game_Clock.tick(self.FPS) # run at most with FPS Frames Per Second
 
     def handle_events(self):
         # Handle each user event by changing the game state appropriately.
@@ -148,11 +159,27 @@ class Game:
 
                 # using a test area of tile, test if the click overlaps with the tile
                 # if so, change the state of the tile to 1, meaning flipped
-                test_area = pygame.Rect(x,y,height,height)
-                if test_area.collidepoint(self.click_x, self.click_y):
+                test_area = pygame.Rect(x, y, height, height)
+
+                # if collides with tile that has not been clicked
+                if test_area.collidepoint(self.click_x, self.click_y) and not self.state[index]:
                     self.state[index] = 1
+                    if self.tile_selected_flag:
+                        # if it is not the same tile, revert changes
+                        if not Tile(x, y, self.tiles[index], self.state[index]).test(self.tiles[self.previous_click]):
+                            self.current_index = index
+                            self.time_pause = True
+                    else:
+                        self.previous_click = index
+                        self.previous_click_coord = [row_index, col_index]
+
+                    self.tile_selected_flag = not self.tile_selected_flag
+
+                    self.click_x = 0
+                    self.click_y = 0
 
                 tile = Tile(x, y, self.tiles[index], self.state[index])
+
                 row.append(tile)
                 index += 1
 
@@ -165,8 +192,6 @@ class Game:
     def decide_continue(self):
         # Check and remember if the game should continue
         # - self is the Game to check
-        
-        # TODO: game ends when * cards are flipped
 
         if 0 in self.state:
             self.continue_game = True
@@ -180,8 +205,10 @@ class Game:
         # set font to 75 and if the game is still going, display time
         # else, do not change the time for the game has ended
         font = pygame.font.SysFont('', 75)
+        
         if self.continue_game:
             self.time = str(pygame.time.get_ticks()//1000)
+
 
         # displays text box at the top, right hand side
         text_box = font.render(self.time, True, self.fg_color, self.bg_color)
@@ -198,9 +225,11 @@ class Tile:
 
     # Shared Attributes or Class Attributes
     surface = None
-    border_size = 2
     border_color = pygame.Color('black')
     question = pygame.image.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'image0.bmp'))
+
+    # def __eq__(self):
+    #     return pygame.image.tostring()
 
     # decorator with class attributes that sets surface
     @classmethod
@@ -222,7 +251,8 @@ class Tile:
 
         self.x = x
         self.y = y
-        self.image = image
+        self.image = image[1]
+        self.image_number = image[0]
         self.state = state
 
 
@@ -234,5 +264,11 @@ class Tile:
             Tile.surface.blit(self.image, (self.x, self.y))
         else:
             Tile.surface.blit(Tile.question, (self.x, self.y))
+
+    def test(self, previous):
+        if self.image_number == previous[0]:
+            Tile.previous_state = ""
+            return True
+        return False
 
 main()
