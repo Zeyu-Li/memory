@@ -64,13 +64,11 @@ class Game:
 
         # state of the whole board and clicked point
         self.state = [0] * pow(self.board_size, 2)
-        self.click_x = 0
-        self.click_y = 0
+        self.click_x, self.click_y = 0, 0
         self.previous_click = 0
-        self.previous_click_coord = []
+        self.current_index = 0
 
         self.tile_selected_flag = False
-        self.current_index = 0
         self.time_pause = False
 
     def create_board(self):
@@ -102,6 +100,10 @@ class Game:
             # play frame
             self.handle_events()
             self.draw()
+
+            # If time is pause (giving a second for incorrect tile)
+            # then pause for 1 second and change 
+            # the current and previous state for not active
             if self.time_pause:
                 pygame.time.wait(1000)
                 self.state[self.previous_click] = 0
@@ -171,10 +173,11 @@ class Game:
                             self.time_pause = True
                     else:
                         self.previous_click = index
-                        self.previous_click_coord = [row_index, col_index]
 
+                    # flip the tile selected flag
                     self.tile_selected_flag = not self.tile_selected_flag
 
+                    # sets clicked back to 0, 0
                     self.click_x = 0
                     self.click_y = 0
 
@@ -228,9 +231,6 @@ class Tile:
     border_color = pygame.Color('black')
     question = pygame.image.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'image0.bmp'))
 
-    # def __eq__(self):
-    #     return pygame.image.tostring()
-
     # decorator with class attributes that sets surface
     @classmethod
     def set_surface(cls, game_surface):
@@ -246,7 +246,7 @@ class Tile:
         # - self is the Tile to initialize
         # - x is the x coord of the image
         # - y is the y coord of the image
-        # - image is the image to draw to the coords
+        # - image is a tuple containing the number of the image and the image obj
         # - state is the bool state of the tile (0 = unknown, 1 = known)
 
         self.x = x
@@ -266,8 +266,10 @@ class Tile:
             Tile.surface.blit(Tile.question, (self.x, self.y))
 
     def test(self, previous):
+        # tests to see if the two selected tiles are the same
+        # - self is the Tile class
+        # - previous is the tuple containing the number associated to the image and the image obj
         if self.image_number == previous[0]:
-            Tile.previous_state = ""
             return True
         return False
 
