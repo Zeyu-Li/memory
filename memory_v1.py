@@ -6,10 +6,9 @@
 # The tiles must be one of the 8 images and in random order upon start
 # of the program
 
-# import pygame and random and os for file path
+# import pygame and random for tiles
 import pygame
 import random
-import os
 
 
 # User-defined functions
@@ -67,16 +66,17 @@ class Game:
         height = self.surface.get_height()//self.board_size
 
         # insert board
-        tile = []
+        tiles = []
         for i in range(self.board_size*2):
-            # TODO: remove for unix systems
             # since the tiles comes in pairs, 
             # add two of the same image, then shuffle
-            tile.append(pygame.image.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'image'+ str(1 + i) + '.bmp')))
-            tile.append(pygame.image.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'image'+ str(1 + i) + '.bmp')))
+            tiles.append(pygame.image.load( 'image'+ str(1 + i) + '.bmp'))
 
+        # doubles the tiles
+        tiles += tiles
+            
         # shuffle board
-        random.shuffle(tile)
+        random.shuffle(tiles)
 
         # index init
         index = 0
@@ -90,7 +90,7 @@ class Game:
                 # https://stackoverflow.com/questions/41886369/pygame-offset-a-grid-made-out-of-rectangles (first answer)
                 x = (1+height) * col_index + 2
                 y = (1+height) * row_index + 2
-                row.append(Tile(x, y, tile[index]))
+                row.append(Tile(x, y, tiles[index]))
                 index+=1
 
             # append the list in the board list

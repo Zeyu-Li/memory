@@ -84,7 +84,7 @@ class Game:
 
         # since the tiles comes in pairs, 
         # add two of the same image, then shuffle
-        self.tiles *= 2
+        self.tiles += self.tiles
         # shuffle board
         random.shuffle(self.tiles)
 
