@@ -61,6 +61,8 @@ class Game:
         self.board_size = 4
         self.create_board()
         self.text()
+        self.change = 0
+        self.previous = 0
 
         # state of the whole board and clicked point
         self.click_x, self.click_y = 0, 0
@@ -103,6 +105,7 @@ class Game:
             # the current and previous state for not active
             if self.time_pause:
                 pygame.time.wait(1000)
+                Tile(0).change(self.change)
                 self.time_pause = False
             if self.continue_game:
                 self.update()
@@ -147,15 +150,19 @@ class Game:
         for row_index in range(0, self.board_size):
             row = []
             for col_index in range(0, self.board_size):
-
                 tile = Tile(index, row_index, col_index, self.tiles[index])
+
                 # if collides with tile that has not been clicked
-                if tile.collision(self.click_x, self.click_y):
-                    tile.change_state()
+                if tile.collision(self.click_x, self.click_y, self.tile_selected_flag):
+                    tile.change_state(1)
+                    self.change = index
+
                     if self.tile_selected_flag:
                         # if it is not the same tile, revert changes
-                        if tile.test(self.tiles[index]):
+                        if not tile == self.previous:
                             self.time_pause = True
+                    else:
+                        self.previous = tile
 
                     # flip the tile selected flag
                     self.tile_selected_flag = not self.tile_selected_flag
@@ -246,8 +253,11 @@ class Tile:
 
 
     def __eq__(self, other):
-        return pygame.image.tostring(self, "RGBA") == pygame.image.tostring(other, "RGBA")
+        return pygame.image.tostring(self.get_image(), "RGBA") == pygame.image.tostring(other.get_image(), "RGBA")
 
+
+    def get_image(self):
+        return self.image
 
     def draw(self):
         # Draw the tile on the surface
@@ -258,19 +268,25 @@ class Tile:
         else:
             Tile.surface.blit(Tile.question, (self.x, self.y))
 
-    def change_state(self):
-        Tile.state[self.current_state] = 1
+    def change_state(self, new_state):
+        Tile.state[self.current_state] = new_state
 
-    def collision(self, click_x, click_y):
+    def change(self, change):
+        Tile.state[change] = 0
+        Tile.state[Tile.previous_image_index] = 0
+
+    def collision(self, click_x, click_y, flag):
         # collision is to test collision given compare_tile
         # - self is Tile class
         # - click_x is the x coord of click
         # - click_y is the y coord of click
 
-        if_collided = pygame.Rect(self.x, self.y, Tile.height, Tile.height).collidepoint(click_x, click_y)
-        Tile.previous_image_index = self.current_state
+        is_collided = pygame.Rect(self.x, self.y, Tile.height, Tile.height).collidepoint(click_x, click_y)
 
-        return if_collided and not Tile.state[self.current_state]
+        if is_collided and not flag:
+            Tile.previous_image_index = self.current_state
+
+        return is_collided and not Tile.state[self.current_state]
 
 
     def test(self, current):
@@ -280,8 +296,6 @@ class Tile:
 
         if Tile.previous_image == current:
             return True
-        Tile.state[self.current_state] = 0
-        Tile.state[Tile.previous_image_index] = 0
         return False
 
     def is_end(self):
