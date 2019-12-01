@@ -148,9 +148,10 @@ class Game:
             row = []
             for col_index in range(0, self.board_size):
 
-                tile = Tile(row_index, col_index, self.tiles[index])
+                tile = Tile(index, row_index, col_index, self.tiles[index])
                 # if collides with tile that has not been clicked
                 if tile.collision(self.click_x, self.click_y):
+                    tile.change_state()
                     if self.tile_selected_flag:
                         # if it is not the same tile, revert changes
                         if tile.test(self.tiles[index]):
@@ -176,7 +177,7 @@ class Game:
         # Check and remember if the game should continue
         # - self is the Game to check
 
-        if Tile().is_end():
+        if Tile(0).is_end():
             self.continue_game = True
         else:
             self.continue_game = False
@@ -226,7 +227,7 @@ class Tile:
         cls.surface = game_surface
 
     # Instance Methods
-    def __init__(self, col_index = None, row_index = None, image=0):
+    def __init__(self, index, col_index = 0, row_index = 0, image=0):
         # Initialize a Tile.
         # - self is the Tile to initialize
         # - x is the x coord of the image
@@ -237,10 +238,9 @@ class Tile:
         # added margins
         # sourced from
         # https://stackoverflow.com/questions/41886369/pygame-offset-a-grid-made-out-of-rectangles (first answer)
-        if row_index is not None:
-            self.x = (1+Tile.height) * col_index + 2
-            self.y = (1+Tile.height) * row_index + 2
-            self.current_state = (row_index*2) + (col_index)
+        self.x = (1+Tile.height) * col_index + 2
+        self.y = (1+Tile.height) * row_index + 2
+        self.current_state = index
 
         self.image = image
 
@@ -258,6 +258,9 @@ class Tile:
         else:
             Tile.surface.blit(Tile.question, (self.x, self.y))
 
+    def change_state(self):
+        Tile.state[self.current_state] = 1
+
     def collision(self, click_x, click_y):
         # collision is to test collision given compare_tile
         # - self is Tile class
@@ -267,9 +270,6 @@ class Tile:
         if_collided = pygame.Rect(self.x, self.y, Tile.height, Tile.height).collidepoint(click_x, click_y)
         Tile.previous_image_index = self.current_state
 
-        if if_collided:
-            Tile.state[self.current_state] = 1
-
         return if_collided and not Tile.state[self.current_state]
 
 
@@ -278,7 +278,7 @@ class Tile:
         # - self is the Tile class
         # - current is the image obj
 
-        if Tile.previous_image == current and Tile.state[self.current_state] == 1:
+        if Tile.previous_image == current:
             return True
         Tile.state[self.current_state] = 0
         Tile.state[Tile.previous_image_index] = 0
