@@ -1,4 +1,4 @@
-# Memory Version 1 - Andrew Li
+# Memory Version 2 - Andrew Li
 # This program is a matching game that consists of a 4x4 matrix.
 # You try to match the tiles of two chooses tiles by 
 # fliping the tiles (future versions) via clicking on the tiles

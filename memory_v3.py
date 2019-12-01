@@ -1,8 +1,8 @@
-# Memory Version 1 - Andrew Li
+# Memory Version 3 - Andrew Li
 # This program is a matching game that consists of a 4x4 matrix.
 # You try to match the tiles of two chooses tiles by 
 # fliping the tiles (future versions) via clicking on the tiles
-# Version 2 - first version plus scoring
+# Version 3 - first version plus scoring
 # event handling of clicks and having the game end when
 # all tiles are flipped
 
@@ -61,7 +61,9 @@ class Game:
         self.board_size = 4
         self.create_board()
         self.text()
-        self.change = 0
+
+        # previous tile and previous tiles
+        self.previous_index = 0
         self.previous = 0
 
         # state of the whole board and clicked point
@@ -105,7 +107,7 @@ class Game:
             # the current and previous state for not active
             if self.time_pause:
                 pygame.time.wait(1000)
-                Tile(0).change(self.change)
+                Tile().change(self.previous_index)
                 self.time_pause = False
             if self.continue_game:
                 self.update()
@@ -154,13 +156,15 @@ class Game:
 
                 # if collides with tile that has not been clicked
                 if tile.collision(self.click_x, self.click_y, self.tile_selected_flag):
+                    # change state is it is shown and log the index
                     tile.change_state(1)
-                    self.change = index
+                    self.previous_index = index
 
-                    if self.tile_selected_flag:
-                        # if it is not the same tile, revert changes
-                        if not tile == self.previous:
-                            self.time_pause = True
+                    # if it is the second card in select pair and is not the previous tile
+                    # pause the time so the player can see the error
+                    if self.tile_selected_flag and tile != self.previous:
+                        self.time_pause = True
+                    # if it is the first tile of pair, remember the tile
                     else:
                         self.previous = tile
 
@@ -168,8 +172,7 @@ class Game:
                     self.tile_selected_flag = not self.tile_selected_flag
 
                     # sets clicked back to 0, 0
-                    self.click_x = 0
-                    self.click_y = 0
+                    self.click_x, self.click_y = 0, 0
 
                 row.append(tile)
                 index += 1
@@ -184,10 +187,12 @@ class Game:
         # Check and remember if the game should continue
         # - self is the Game to check
 
-        if Tile(0).is_end():
-            self.continue_game = True
-        else:
+        # if all cards flipped,
+        # end the game 
+        if not Tile().check_empty():
             self.continue_game = False
+        else:
+            self.continue_game = True
 
     def text(self):
         # displays the text score
@@ -216,7 +221,6 @@ class Tile:
 
     # Shared Attributes or Class Attributes
     surface = None
-    border_color = pygame.Color('black')
     board_size = 4
     state = [0] * pow(board_size, 2)
     height = 415//board_size
@@ -234,13 +238,13 @@ class Tile:
         cls.surface = game_surface
 
     # Instance Methods
-    def __init__(self, index, col_index = 0, row_index = 0, image=0):
+    def __init__(self, index = 0, col_index = 0, row_index = 0, image = 0):
         # Initialize a Tile.
         # - self is the Tile to initialize
-        # - x is the x coord of the image
-        # - y is the y coord of the image
-        # - image is a tuple containing the number of the image and the image obj
-        # - state is the bool state of the tile (0 = unknown, 1 = known)
+        # - index is the index of tile
+        # - col_index is the column number of tile
+        # - row_index is the row number of tile
+        # - image is a obj containing the image of tile
 
         # added margins
         # sourced from
@@ -252,11 +256,18 @@ class Tile:
         self.image = image
 
 
-    def __eq__(self, other):
-        return pygame.image.tostring(self.get_image(), "RGBA") == pygame.image.tostring(other.get_image(), "RGBA")
+    def __ne__(self, other):
+        # overloads !equal operator
+        # self - is the first arg
+        # other - is the second arg
+
+        # convert to string and see if they are the same
+        return not pygame.image.tostring(self.get_image(), "RGBA") == pygame.image.tostring(other.get_image(), "RGBA")
 
 
     def get_image(self):
+        # returns self.image
+        # self - Tile class
         return self.image
 
     def draw(self):
@@ -269,9 +280,17 @@ class Tile:
             Tile.surface.blit(Tile.question, (self.x, self.y))
 
     def change_state(self, new_state):
+        # changes the state of a given tile
+        # - self is Tile class
+        # - new_state is new state of the tile (1 for flipped or 0 for not flipped)
+
         Tile.state[self.current_state] = new_state
 
     def change(self, change):
+        # changes the state of a given tile and the previous tile
+        # - self is Tile class
+        # - change is index of the tile to be "unflipped"
+
         Tile.state[change] = 0
         Tile.state[Tile.previous_image_index] = 0
 
@@ -280,6 +299,7 @@ class Tile:
         # - self is Tile class
         # - click_x is the x coord of click
         # - click_y is the y coord of click
+        # - flag is the if this is the first or second pair of card flipped
 
         is_collided = pygame.Rect(self.x, self.y, Tile.height, Tile.height).collidepoint(click_x, click_y)
 
@@ -298,7 +318,10 @@ class Tile:
             return True
         return False
 
-    def is_end(self):
+    def check_empty(self):
+        # checks to see if all the tiles have been flipped
+        # - self is Tile class
+
         return 0 in Tile.state
 
 main()
