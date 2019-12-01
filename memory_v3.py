@@ -226,7 +226,7 @@ class Tile:
     height = 415//board_size
     question = pygame.image.load(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'image0.bmp'))
     previous_image = 0
-    previous_image_index = -1
+    previous_image_index = 0
 
     # decorator with class attributes that sets surface
     @classmethod
@@ -255,7 +255,6 @@ class Tile:
 
         self.image = image
 
-
     def __ne__(self, other):
         # overloads !equal operator
         # self - is the first arg
@@ -263,7 +262,6 @@ class Tile:
 
         # convert to string and see if they are the same
         return not pygame.image.tostring(self.get_image(), "RGBA") == pygame.image.tostring(other.get_image(), "RGBA")
-
 
     def get_image(self):
         # returns self.image
@@ -303,11 +301,15 @@ class Tile:
 
         is_collided = pygame.Rect(self.x, self.y, Tile.height, Tile.height).collidepoint(click_x, click_y)
 
-        if is_collided and not flag:
+        collision_with_unknown = is_collided and not Tile.state[self.current_state]
+
+        # if there is a collision with tile and 
+        # it is the first tile of pair, log the index of tile
+        if collision_with_unknown and not flag:
             Tile.previous_image_index = self.current_state
 
-        return is_collided and not Tile.state[self.current_state]
-
+        # return if it is collided and if it has not been click before
+        return collision_with_unknown
 
     def test(self, current):
         # tests to see if the two selected tiles are the same
