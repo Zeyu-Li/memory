@@ -261,7 +261,7 @@ class Tile:
         # other - is the second arg
 
         # convert to string and see if they are the same
-        return not pygame.image.tostring(self.get_image(), "RGBA") == pygame.image.tostring(other.get_image(), "RGBA")
+        return not self.get_image() == other.get_image()
 
     def get_image(self):
         # returns self.image
